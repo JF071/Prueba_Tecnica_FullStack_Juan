@@ -10,6 +10,7 @@ const check = async <T extends object>(cls: new () => T, body: object) => {
 
 const valid = {
   name: 'Urea granulada 46%',
+  supplier: 'Agroinsumos del Valle',
   baseUnit: 'kg',
   stock: 1250.5,
   presentations: [
@@ -28,6 +29,11 @@ describe('CreateProductDto', () => {
   it('rechaza un nombre con solo espacios (antes llegaba a Mongo y daba 500)', async () => {
     const { errors } = await check(CreateProductDto, { ...valid, name: '   ' });
     expect(errors[0].constraints).toHaveProperty('isNotEmpty', 'El nombre es obligatorio');
+  });
+
+  it('exige el proveedor (marketplace con varios vendedores)', async () => {
+    const { errors } = await check(CreateProductDto, { ...valid, supplier: '  ' });
+    expect(errors[0].constraints).toHaveProperty('isNotEmpty', 'El proveedor es obligatorio');
   });
 
   it('rechaza una unidad base que no está en la lista', async () => {

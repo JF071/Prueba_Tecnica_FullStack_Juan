@@ -16,6 +16,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   const [f, setF] = useState({
     name: product?.name ?? '',
     description: product?.description ?? '',
+    supplier: product?.supplier ?? '',
     category: product?.category ?? 'general',
     baseUnit: (product?.baseUnit ?? 'kg') as BaseUnit,
     stock: String(product?.stock ?? ''),
@@ -33,6 +34,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!f.name.trim()) e.name = 'El nombre es obligatorio';
+    if (!f.supplier.trim()) e.supplier = 'El proveedor es obligatorio';
     if (f.stock === '' || Number(f.stock) < 0) e.stock = 'Ingresa un stock válido (0 o más)';
     rows.forEach((r, i) => {
       if (!r.name.trim()) e[`p${i}`] = 'Ponle un nombre a la presentación';
@@ -51,6 +53,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
     const error = await onSubmit({
       name: f.name.trim(),
       description: f.description.trim(),
+      supplier: f.supplier.trim(),
       category: f.category.trim() || 'general',
       baseUnit: f.baseUnit,
       stock: Number(f.stock),
@@ -79,6 +82,12 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
             <input className="input" value={f.category} onChange={set('category')} maxLength={60} />
           </label>
         </div>
+
+        <label className="block">
+          <span className="field-label">Proveedor *</span>
+          <input className="input" value={f.supplier} onChange={set('supplier')} maxLength={120} placeholder="Ej. Agroinsumos del Valle S.A.S." />
+          {fieldError('supplier')}
+        </label>
 
         <label className="block">
           <span className="field-label">Descripción</span>

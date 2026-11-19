@@ -113,7 +113,7 @@ export function ProductsPage() {
       <div className="card p-4">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input className="input pl-9 pr-9" placeholder="Buscar por nombre…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar" />
+          <input className="input pl-9 pr-9" placeholder="Buscar por producto o proveedor…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar" />
           {q && (
             <button onClick={() => setQ('')} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               <X size={13} />
@@ -144,7 +144,7 @@ export function ProductsPage() {
                 <thead>
                   <tr className="border-b border-border bg-muted">
                     <th className="th rounded-tl-xl">Producto</th>
-                    <th className="th">Categoría</th>
+                    <th className="th">Proveedor / Categoría</th>
                     <th className="th">Presentaciones</th>
                     <th className="th text-right">Disponible</th>
                     <th className="th rounded-tr-xl text-right">Acciones</th>
@@ -158,7 +158,8 @@ export function ProductsPage() {
                         {p.description && <p className="mt-0.5 max-w-xs truncate text-[11px] text-muted-foreground" title={p.description}>{p.description}</p>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">{p.category}</span>
+                        <p className="mb-1 text-xs font-medium text-foreground">{p.supplier || '—'}</p>
+                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{p.category}</span>
                       </td>
                       <td className="max-w-sm px-4 py-3"><PresentationChips p={p} /></td>
                       <td className="whitespace-nowrap px-4 py-3"><StockCell p={p} /></td>
@@ -178,7 +179,7 @@ export function ProductsPage() {
                   <div className="min-w-0 space-y-1.5">
                     <div>
                       <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.category}</p>
+                      <p className="text-xs text-muted-foreground">{p.supplier || 'Sin proveedor'} · {p.category}</p>
                     </div>
                     <StockCell p={p} align="left" />
                     <PresentationChips p={p} />

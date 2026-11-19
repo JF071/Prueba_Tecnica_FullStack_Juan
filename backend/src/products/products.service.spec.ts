@@ -44,10 +44,11 @@ describe('ProductsService', () => {
     expect(model.find).toHaveBeenCalledWith({ active: false });
   });
 
-  it('escapa caracteres especiales en la búsqueda', async () => {
+  it('busca por nombre o proveedor, escapando caracteres especiales', async () => {
     mockList([], 0);
     await service.findAll({ page: 1, limit: 10, search: '.*(', status: 'active' });
-    expect(model.find).toHaveBeenCalledWith({ active: { $ne: false }, name: { $regex: '\\.\\*\\(', $options: 'i' } });
+    const regex = { $regex: '\\.\\*\\(', $options: 'i' };
+    expect(model.find).toHaveBeenCalledWith({ active: { $ne: false }, $or: [{ name: regex }, { supplier: regex }] });
   });
 
   it('findOne lanza 404 si no existe', async () => {

@@ -39,6 +39,13 @@ export class CreateProductDto {
   @MaxLength(120)
   name: string;
 
+  @ApiProperty({ example: 'Agroinsumos del Valle S.A.S.', description: 'Proveedor que vende el producto en el marketplace' })
+  @Trim()
+  @IsString()
+  @IsNotEmpty({ message: 'El proveedor es obligatorio' })
+  @MaxLength(120)
+  supplier: string;
+
   @ApiPropertyOptional({ example: 'Fertilizante nitrogenado' })
   @IsOptional()
   @Trim()
@@ -89,7 +96,7 @@ export class ListProductsQueryDto {
   @Max(100)
   limit: number = 10;
 
-  @ApiPropertyOptional({ description: 'Búsqueda por nombre' })
+  @ApiPropertyOptional({ description: 'Búsqueda por nombre del producto o del proveedor' })
   @IsOptional()
   @IsString()
   @MaxLength(60)

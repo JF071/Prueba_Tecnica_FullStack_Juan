@@ -22,7 +22,7 @@ vi.mock('../api', async (importOriginal) => {
 const { api } = await import('../api');
 
 const input: ProductInput = {
-  name: 'Semilla de maíz', description: '', category: 'semillas', baseUnit: 'kg', stock: 5,
+  name: 'Semilla de maíz', description: '', supplier: 'Semillas Andinas', category: 'semillas', baseUnit: 'kg', stock: 5,
   presentations: [{ name: 'Bolsa 1 kg', factor: 1, price: 1000 }],
 };
 

@@ -12,6 +12,8 @@ export interface Product {
   _id: string;
   name: string;
   description: string;
+  /** Quién vende el producto en el marketplace */
+  supplier: string;
   category: string;
   baseUnit: BaseUnit;
   /** Existencias en la unidad base */

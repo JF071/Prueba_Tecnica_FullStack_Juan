@@ -21,7 +21,10 @@ export class ProductsService {
   async findAll({ page, limit, search, status }: ListProductsQueryDto) {
     const filter: FilterQuery<Product> = status === 'inactive' ? { active: false } : { ...ACTIVE };
     // Se escapa el texto: evita inyección de regex / NoSQL en la búsqueda
-    if (search) filter.name = { $regex: escapeRegex(search), $options: 'i' };
+    if (search) {
+      const regex = { $regex: escapeRegex(search), $options: 'i' };
+      filter.$or = [{ name: regex }, { supplier: regex }];
+    }
 
     const [items, total] = await Promise.all([
       this.model

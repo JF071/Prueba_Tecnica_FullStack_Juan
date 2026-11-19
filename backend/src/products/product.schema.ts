@@ -36,6 +36,10 @@ export class Product {
   @Prop({ trim: true, default: '' })
   description: string;
 
+  /** Quién vende el producto en el marketplace (texto simple; ver mejoras futuras en el README) */
+  @Prop({ trim: true, default: '', index: true })
+  supplier: string;
+
   @Prop({ trim: true, default: 'general' })
   category: string;
 
