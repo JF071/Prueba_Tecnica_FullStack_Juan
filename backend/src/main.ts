@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { MongoExceptionFilter } from './common/mongo-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new MongoExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('API de Productos')
