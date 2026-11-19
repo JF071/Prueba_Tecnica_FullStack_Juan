@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { useEscape } from '../hooks/useEscape';
+import { AlertCircle, Package } from 'lucide-react';
 import type { Product, ProductInput } from '../types';
+import { Modal } from './ui/Modal';
 
 interface Props { product?: Product; onSubmit: (d: ProductInput) => Promise<string | null>; onClose: () => void }
 
@@ -12,7 +13,6 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  useEscape(onClose);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -37,24 +37,48 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   };
 
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  const fieldError = (k: string) => errors[k] && <span className="mt-1 block text-xs text-red-600">{errors[k]}</span>;
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-label={product ? 'Editar producto' : 'Nuevo producto'}>
-      <form className="card modal" onSubmit={submit} noValidate>
-        <h2>{product ? 'Editar producto' : 'Nuevo producto'}</h2>
-        <label>Nombre<input autoFocus value={f.name} onChange={set('name')} maxLength={120} />{errors.name && <span className="error">{errors.name}</span>}</label>
-        <label>Descripción<textarea value={f.description} onChange={set('description')} maxLength={500} rows={3} /></label>
-        <div className="row">
-          <label>Precio<input type="number" step="0.01" min="0" value={f.price} onChange={set('price')} />{errors.price && <span className="error">{errors.price}</span>}</label>
-          <label>Stock<input type="number" step="1" min="0" value={f.stock} onChange={set('stock')} />{errors.stock && <span className="error">{errors.stock}</span>}</label>
+    <Modal title={product ? 'Editar producto' : 'Nuevo producto'} icon={<Package size={14} />} onClose={onClose}>
+      <form onSubmit={submit} noValidate className="space-y-4 px-5 py-5">
+        <label className="block">
+          <span className="field-label">Nombre *</span>
+          <input autoFocus className="input" value={f.name} onChange={set('name')} maxLength={120} />
+          {fieldError('name')}
+        </label>
+        <label className="block">
+          <span className="field-label">Descripción</span>
+          <textarea className="input" value={f.description} onChange={set('description')} maxLength={500} rows={3} />
+        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="field-label">Precio *</span>
+            <input className="input" type="number" step="0.01" min="0" value={f.price} onChange={set('price')} />
+            {fieldError('price')}
+          </label>
+          <label className="block">
+            <span className="field-label">Stock *</span>
+            <input className="input" type="number" step="1" min="0" value={f.stock} onChange={set('stock')} />
+            {fieldError('stock')}
+          </label>
         </div>
-        <label>Categoría<input value={f.category} onChange={set('category')} maxLength={60} /></label>
-        {serverError && <p className="error" role="alert">{serverError}</p>}
-        <div className="actions">
-          <button type="button" onClick={onClose}>Cancelar</button>
-          <button className="primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button>
+        <label className="block">
+          <span className="field-label">Categoría</span>
+          <input className="input" value={f.category} onChange={set('category')} maxLength={60} />
+        </label>
+
+        {serverError && (
+          <p role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+            <AlertCircle size={14} className="mt-0.5 flex-shrink-0" /> {serverError}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+          <button className="btn-primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }

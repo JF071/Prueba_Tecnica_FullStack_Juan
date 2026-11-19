@@ -14,6 +14,7 @@ interface ProductState {
   notice: { type: 'ok' | 'error'; text: string } | null;
   load: () => Promise<void>;
   setPage: (p: number) => Promise<void>;
+  setLimit: (limit: number) => Promise<void>;
   setSearch: (s: string) => Promise<void>;
   /** Devuelve null si guardó bien, o el mensaje de error para mostrarlo en el formulario. */
   save: (data: ProductInput, id?: string) => Promise<string | null>;
@@ -63,6 +64,7 @@ export const useProducts = create<ProductState>((set, get) => {
       }
     },
     async setPage(page) { set({ page }); await get().load(); },
+    async setLimit(limit) { set({ limit, page: 1 }); await get().load(); },
     async setSearch(search) { set({ search, page: 1 }); await get().load(); },
 
     async save(data, id) {

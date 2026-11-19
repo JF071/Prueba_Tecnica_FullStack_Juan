@@ -1,6 +1,20 @@
 import { create } from 'zustand';
 import { api, ApiError, tokenStorage } from '../api';
 
+/**
+ * Lee el correo guardado dentro del JWT, solo para mostrarlo en pantalla.
+ * No valida la firma: eso lo hace siempre el backend en cada petición.
+ */
+export function emailFromToken(token: string | null): string | null {
+  try {
+    const payload = token?.split('.')[1];
+    if (!payload) return null;
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthState {
   token: string | null;
   loading: boolean;
