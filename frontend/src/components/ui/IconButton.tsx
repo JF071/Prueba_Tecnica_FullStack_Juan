@@ -15,7 +15,8 @@ export function IconButton({ label, tone, onClick, children }: Props) {
     <button onClick={onClick} aria-label={label}
       className={`group/btn relative rounded-lg p-1.5 text-muted-foreground transition-colors ${tones[tone]}`}>
       {children}
-      <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] text-background opacity-0 transition-opacity group-hover/btn:opacity-100">
+      {/* Anclado a la derecha: si se centrara, el de la última columna se saldría de la tabla y crearía scroll horizontal */}
+      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] text-background opacity-0 transition-opacity group-hover/btn:opacity-100">
         {label}
       </span>
     </button>

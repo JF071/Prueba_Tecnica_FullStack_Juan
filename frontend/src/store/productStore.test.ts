@@ -14,6 +14,7 @@ vi.mock('../api', async (importOriginal) => {
       create: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
+      reactivate: vi.fn(),
     },
   };
 });
@@ -58,6 +59,28 @@ describe('productStore.load', () => {
 
     expect(useProducts.getState().page).toBe(3);
     expect(useProducts.getState().items[0].name).toBe('de-pagina-3');
+  });
+});
+
+describe('inhabilitar / ver inactivos', () => {
+  beforeEach(() => vi.mocked(api.list).mockResolvedValue(pageOf('x', 1)));
+
+  it('setStatus pide al backend los inactivos desde la página 1', async () => {
+    useProducts.setState({ page: 3, search: '' });
+    await useProducts.getState().setStatus('inactive');
+    expect(api.list).toHaveBeenLastCalledWith(1, 10, '', 'inactive');
+    await useProducts.getState().setStatus('active');
+  });
+
+  it('remove inhabilita y reactivate reactiva, mostrando el aviso correspondiente', async () => {
+    vi.mocked(api.remove).mockResolvedValue(undefined);
+    await useProducts.getState().remove('p1');
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto inhabilitado' });
+
+    vi.mocked(api.reactivate).mockResolvedValue(product('p1'));
+    await useProducts.getState().reactivate('p1');
+    expect(api.reactivate).toHaveBeenCalledWith('p1');
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto reactivado' });
   });
 });
 

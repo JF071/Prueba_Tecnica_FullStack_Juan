@@ -6,6 +6,9 @@ import {
 } from 'class-validator';
 import { BASE_UNITS, BaseUnit } from '../product.schema';
 
+export const PRODUCT_STATUS = ['active', 'inactive'] as const;
+export type ProductStatus = (typeof PRODUCT_STATUS)[number];
+
 /** Quita espacios al inicio y al final antes de validar ("   " pasa a ""). */
 const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
@@ -91,4 +94,9 @@ export class ListProductsQueryDto {
   @IsString()
   @MaxLength(60)
   search?: string;
+
+  @ApiPropertyOptional({ enum: PRODUCT_STATUS, default: 'active', description: 'active = habilitados, inactive = inhabilitados' })
+  @IsOptional()
+  @IsIn(PRODUCT_STATUS)
+  status: ProductStatus = 'active';
 }

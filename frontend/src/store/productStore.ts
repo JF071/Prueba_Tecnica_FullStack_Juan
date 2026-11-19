@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api, ApiError } from '../api';
 import { useAuth } from './authStore';
-import type { Product, ProductInput } from '../types';
+import type { Product, ProductInput, ProductStatus } from '../types';
 
 interface ProductState {
   items: Product[];
@@ -10,22 +10,27 @@ interface ProductState {
   limit: number;
   totalPages: number;
   search: string;
+  /** 'active' = habilitados, 'inactive' = vista "Ver inactivos" */
+  status: ProductStatus;
   loading: boolean;
   notice: { type: 'ok' | 'error'; text: string } | null;
   load: () => Promise<void>;
   setPage: (p: number) => Promise<void>;
   setLimit: (limit: number) => Promise<void>;
   setSearch: (s: string) => Promise<void>;
+  setStatus: (s: ProductStatus) => Promise<void>;
   /** Devuelve null si guardó bien, o el mensaje de error para mostrarlo en el formulario. */
   save: (data: ProductInput, id?: string) => Promise<string | null>;
+  /** Inhabilita el producto (eliminación lógica) */
   remove: (id: string) => Promise<void>;
+  reactivate: (id: string) => Promise<void>;
   dismiss: () => void;
 }
 
-type ProductData = Pick<ProductState, 'items' | 'total' | 'page' | 'limit' | 'totalPages' | 'search' | 'loading' | 'notice'>;
+type ProductData = Pick<ProductState, 'items' | 'total' | 'page' | 'limit' | 'totalPages' | 'search' | 'status' | 'loading' | 'notice'>;
 
 const initialData: ProductData = {
-  items: [], total: 0, page: 1, limit: 10, totalPages: 1, search: '', loading: false, notice: null,
+  items: [], total: 0, page: 1, limit: 10, totalPages: 1, search: '', status: 'active', loading: false, notice: null,
 };
 
 /** Número de la última carga pedida: sirve para descartar respuestas viejas. */
@@ -41,16 +46,24 @@ export const useProducts = create<ProductState>((set, get) => {
     logoutIfExpired(e);
     set({ loading: false, notice: { type: 'error', text: errorText(e) } });
   };
+  /** Ejecuta una acción sobre un producto, muestra el aviso y recarga la lista. */
+  const runAction = async (action: () => Promise<unknown>, okText: string) => {
+    try {
+      await action();
+      set({ notice: { type: 'ok', text: okText } });
+      await get().load();
+    } catch (e) { fail(e); }
+  };
 
   return {
     ...initialData,
 
     async load() {
-      const { page, limit, search } = get();
+      const { page, limit, search, status } = get();
       const requestId = ++lastRequest;
       set({ loading: true });
       try {
-        const res = await api.list(page, limit, search);
+        const res = await api.list(page, limit, search, status);
         // Si mientras esperábamos se pidió otra página o búsqueda, esta respuesta ya no sirve
         if (requestId !== lastRequest) return;
         // Si borraste el último elemento de la última página, retrocede
@@ -66,6 +79,7 @@ export const useProducts = create<ProductState>((set, get) => {
     async setPage(page) { set({ page }); await get().load(); },
     async setLimit(limit) { set({ limit, page: 1 }); await get().load(); },
     async setSearch(search) { set({ search, page: 1 }); await get().load(); },
+    async setStatus(status) { set({ status, page: 1, items: [] }); await get().load(); },
 
     async save(data, id) {
       try {
@@ -79,13 +93,8 @@ export const useProducts = create<ProductState>((set, get) => {
         return errorText(e);
       }
     },
-    async remove(id) {
-      try {
-        await api.remove(id);
-        set({ notice: { type: 'ok', text: 'Producto eliminado' } });
-        await get().load();
-      } catch (e) { fail(e); }
-    },
+    remove: (id) => runAction(() => api.remove(id), 'Producto inhabilitado'),
+    reactivate: (id) => runAction(() => api.reactivate(id), 'Producto reactivado'),
     dismiss: () => set({ notice: null }),
   };
 });

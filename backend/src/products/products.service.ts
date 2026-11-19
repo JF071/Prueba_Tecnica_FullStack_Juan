@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { CreateProductDto, ListProductsQueryDto, UpdateProductDto } from './dto/product.dto';
 import { Product } from './product.schema';
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Habilitado = active distinto de false (incluye documentos antiguos que no tienen el campo). */
+const ACTIVE: FilterQuery<Product> = { active: { $ne: false } };
 
 @Injectable()
 export class ProductsService {
@@ -14,9 +17,11 @@ export class ProductsService {
     return this.model.create(dto);
   }
 
-  async findAll({ page, limit, search }: ListProductsQueryDto) {
+  async findAll({ page, limit, search, status }: ListProductsQueryDto) {
+    const filter: FilterQuery<Product> = status === 'inactive' ? { active: false } : { ...ACTIVE };
     // Se escapa el texto: evita inyección de regex / NoSQL en la búsqueda
-    const filter = search ? { name: { $regex: escapeRegex(search), $options: 'i' } } : {};
+    if (search) filter.name = { $regex: escapeRegex(search), $options: 'i' };
+
     const [items, total] = await Promise.all([
       this.model
         .find(filter)
@@ -36,17 +41,28 @@ export class ProductsService {
     return product;
   }
 
+  /** Solo se editan productos habilitados. */
   async update(id: string, dto: UpdateProductDto) {
     const product = await this.model
-      .findByIdAndUpdate(id, { $set: dto }, { new: true, runValidators: true })
+      .findOneAndUpdate({ _id: id, ...ACTIVE }, { $set: dto }, { new: true, runValidators: true })
       .lean()
       .exec();
-    if (!product) throw new NotFoundException('Producto no encontrado');
+    if (!product) throw new NotFoundException('Producto no encontrado o inhabilitado');
     return product;
   }
 
+  /** Eliminación lógica: marca el producto como inhabilitado, no lo borra de la base. */
   async remove(id: string) {
-    const res = await this.model.findByIdAndDelete(id).exec();
-    if (!res) throw new NotFoundException('Producto no encontrado');
+    await this.setActive(id, false);
+  }
+
+  reactivate(id: string) {
+    return this.setActive(id, true);
+  }
+
+  private async setActive(id: string, active: boolean) {
+    const product = await this.model.findByIdAndUpdate(id, { $set: { active } }, { new: true }).lean().exec();
+    if (!product) throw new NotFoundException('Producto no encontrado');
+    return product;
   }
 }

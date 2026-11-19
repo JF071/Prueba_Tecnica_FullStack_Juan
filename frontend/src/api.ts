@@ -1,4 +1,4 @@
-import type { Page, Product, ProductInput } from './types';
+import type { Page, Product, ProductInput, ProductStatus } from './types';
 
 const BASE = import.meta.env.VITE_API_URL ?? '/api';
 const TOKEN_KEY = 'token';
@@ -17,7 +17,7 @@ export class ApiError extends Error {
 export function friendlyMessage(status: number, body: any): string {
   if (status === 0) return 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.';
   if (status === 401) return 'Tu sesión expiró o las credenciales no son válidas.';
-  if (status === 404) return 'El producto ya no existe.';
+  if (status === 404) return body?.message ? String(body.message) : 'El producto ya no existe.';
   if (status === 409) return 'Ya existe un registro con esos datos.';
   if (status === 429) return 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.';
   if (status === 400 && body?.message) {
@@ -53,10 +53,12 @@ export const api = {
     request<{ accessToken: string }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   register: (email: string, password: string) =>
     request<{ id: string }>('/auth/register', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  list: (page: number, limit: number, search: string) =>
-    request<Page<Product>>(`/products?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+  list: (page: number, limit: number, search: string, status: ProductStatus = 'active') =>
+    request<Page<Product>>(`/products?page=${page}&limit=${limit}&status=${status}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   create: (p: ProductInput) => request<Product>('/products', { method: 'POST', body: JSON.stringify(p) }),
   update: (id: string, p: Partial<ProductInput>) =>
     request<Product>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(p) }),
+  /** Inhabilita (el backend no borra el registro) */
   remove: (id: string) => request<void>(`/products/${id}`, { method: 'DELETE' }),
+  reactivate: (id: string) => request<Product>(`/products/${id}/reactivar`, { method: 'PATCH' }),
 };

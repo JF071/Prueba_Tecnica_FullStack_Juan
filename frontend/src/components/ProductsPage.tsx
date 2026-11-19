@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Edit2, Loader2, Package, Plus, Search, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Edit2, EyeOff, Loader2, Package, Plus, RotateCcw, Search, Trash2, X, XCircle } from 'lucide-react';
 import { useProducts } from '../store/productStore';
 import type { Product } from '../types';
 import { formatQty, money, stockEquivalence } from '../units';
@@ -59,14 +59,25 @@ export function ProductsPage() {
     setDeleting(null);
   };
 
-  const actions = (p: Product) => (
-    <>
-      <IconButton label="Editar" tone="amber" onClick={() => setEditing(p)}><Edit2 size={14} /></IconButton>
-      <IconButton label="Eliminar" tone="red" onClick={() => setDeleting(p)}><Trash2 size={14} /></IconButton>
-    </>
-  );
+  const inactiveView = s.status === 'inactive';
+
+  // En la vista de inactivos solo se puede reactivar (igual que en el CRM)
+  const actions = (p: Product) =>
+    inactiveView ? (
+      <IconButton label="Reactivar" tone="green" onClick={() => s.reactivate(p._id)}><RotateCcw size={14} /></IconButton>
+    ) : (
+      <>
+        <IconButton label="Editar" tone="amber" onClick={() => setEditing(p)}><Edit2 size={14} /></IconButton>
+        <IconButton label="Inhabilitar" tone="red" onClick={() => setDeleting(p)}><Trash2 size={14} /></IconButton>
+      </>
+    );
 
   const empty = !s.loading && s.items.length === 0;
+  const plural = s.total !== 1 ? 's' : '';
+  const emptyTitle = s.search ? 'Sin resultados' : inactiveView ? 'No hay productos inhabilitados' : 'Aún no hay productos';
+  const emptyHint = s.search
+    ? 'Intenta con otro término de búsqueda'
+    : inactiveView ? 'Los productos que inhabilites aparecerán aquí' : 'Crea el primero con el botón "Nuevo producto"';
 
   return (
     <div className="space-y-4">
@@ -75,12 +86,22 @@ export function ProductsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Productos</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {s.total} producto{s.total !== 1 ? 's' : ''} {s.search ? 'encontrado' + (s.total !== 1 ? 's' : '') : 'registrado' + (s.total !== 1 ? 's' : '')}
+            {s.total} producto{plural} {inactiveView ? `inhabilitado${plural}` : s.search ? `encontrado${plural}` : `activo${plural}`}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setEditing('new')}>
-          <Plus size={14} /> Nuevo producto
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => s.setStatus(inactiveView ? 'active' : 'inactive')} aria-pressed={inactiveView}
+            className={`btn border ${inactiveView
+              ? 'border-foreground bg-foreground text-background'
+              : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+            <EyeOff size={14} /> {inactiveView ? 'Viendo inactivos' : 'Ver inactivos'}
+          </button>
+          {!inactiveView && (
+            <button className="btn-primary" onClick={() => setEditing('new')}>
+              <Plus size={14} /> Nuevo producto
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Búsqueda */}
@@ -107,8 +128,8 @@ export function ProductsPage() {
         {empty ? (
           <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
             <div className="rounded-xl bg-muted p-4"><Package size={28} className="text-muted-foreground" /></div>
-            <p className="text-sm font-semibold text-foreground">{s.search ? 'Sin resultados' : 'Aún no hay productos'}</p>
-            <p className="text-xs text-muted-foreground">{s.search ? 'Intenta con otro término de búsqueda' : 'Crea el primero con el botón "Nuevo producto"'}</p>
+            <p className="text-sm font-semibold text-foreground">{emptyTitle}</p>
+            <p className="text-xs text-muted-foreground">{emptyHint}</p>
           </div>
         ) : (
           <>
@@ -126,7 +147,7 @@ export function ProductsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {s.items.map((p) => (
-                    <tr key={p._id} className="group transition-colors hover:bg-muted/30">
+                    <tr key={p._id} className={`group transition-colors ${inactiveView ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-muted/30'}`}>
                       <td className="px-4 py-3">
                         <p className="text-sm font-semibold text-foreground">{p.name}</p>
                         {p.description && <p className="mt-0.5 max-w-xs truncate text-[11px] text-muted-foreground" title={p.description}>{p.description}</p>}
@@ -188,10 +209,10 @@ export function ProductsPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Eliminar producto"
-          message={<>¿Seguro que quieres eliminar <span className="font-bold">{deleting.name}</span>?</>}
-          detail="Esta acción no se puede deshacer."
-          confirmLabel="Eliminar"
+          title="Inhabilitar producto"
+          message={<>¿Seguro que quieres inhabilitar <span className="font-bold">{deleting.name}</span>?</>}
+          detail='Dejará de aparecer en el inventario, pero no se borra: puedes reactivarlo después desde "Ver inactivos".'
+          confirmLabel="Inhabilitar"
           onConfirm={confirmDelete}
           onCancel={() => setDeleting(null)}
         />

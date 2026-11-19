@@ -49,6 +49,13 @@ export class Product {
   /** Embebidas: siempre se consultan junto con el producto */
   @Prop({ type: [PresentationSchema], default: [] })
   presentations: Presentation[];
+
+  /**
+   * Eliminación lógica: "eliminar" solo marca active=false. El registro se conserva
+   * para no perder historial (ventas o movimientos que lo referencien) y poder reactivarlo.
+   */
+  @Prop({ default: true, index: true })
+  active: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

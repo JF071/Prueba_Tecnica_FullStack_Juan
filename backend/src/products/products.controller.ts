@@ -1,7 +1,7 @@
 import {
   Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe';
 import { CreateProductDto, ListProductsQueryDto, UpdateProductDto } from './dto/product.dto';
@@ -36,7 +36,14 @@ export class ProductsController {
 
   @Delete(':id')
   @HttpCode(204)
+  @ApiOperation({ summary: 'Inhabilita el producto (eliminación lógica: no se borra de la base)' })
   remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.products.remove(id);
+  }
+
+  @Patch(':id/reactivar')
+  @ApiOperation({ summary: 'Vuelve a habilitar un producto inhabilitado' })
+  reactivate(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.products.reactivate(id);
   }
 }

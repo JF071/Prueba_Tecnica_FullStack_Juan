@@ -17,7 +17,10 @@ export interface Product {
   /** Existencias en la unidad base */
   stock: number;
   presentations: Presentation[];
+  /** false = inhabilitado (eliminación lógica) */
+  active?: boolean;
 }
 
-export type ProductInput = Omit<Product, '_id'>;
+export type ProductInput = Omit<Product, '_id' | 'active'>;
+export type ProductStatus = 'active' | 'inactive';
 export interface Page<T> { items: T[]; total: number; page: number; limit: number; totalPages: number }

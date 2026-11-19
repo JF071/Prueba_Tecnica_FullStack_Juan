@@ -21,18 +21,33 @@ describe('ProductsService', () => {
     service = mod.get(ProductsService);
   });
 
+  const mockList = (items: unknown[], total: number) => {
+    model.find = jest.fn(() => chain(items));
+    model.countDocuments = jest.fn(() => chain(total));
+  };
+
   it('pagina y calcula totalPages', async () => {
-    model.find = jest.fn(() => chain([{ name: 'a' }]));
-    model.countDocuments = jest.fn(() => chain(25));
-    const res = await service.findAll({ page: 2, limit: 10 });
+    mockList([{ name: 'a' }], 25);
+    const res = await service.findAll({ page: 2, limit: 10, status: 'active' });
     expect(res).toMatchObject({ total: 25, page: 2, limit: 10, totalPages: 3 });
   });
 
+  it('por defecto lista solo habilitados (incluye documentos sin el campo active)', async () => {
+    mockList([], 0);
+    await service.findAll({ page: 1, limit: 10, status: 'active' });
+    expect(model.find).toHaveBeenCalledWith({ active: { $ne: false } });
+  });
+
+  it('con status=inactive lista solo los inhabilitados', async () => {
+    mockList([], 0);
+    await service.findAll({ page: 1, limit: 10, status: 'inactive' });
+    expect(model.find).toHaveBeenCalledWith({ active: false });
+  });
+
   it('escapa caracteres especiales en la búsqueda', async () => {
-    model.find = jest.fn(() => chain([]));
-    model.countDocuments = jest.fn(() => chain(0));
-    await service.findAll({ page: 1, limit: 10, search: '.*(' });
-    expect(model.find).toHaveBeenCalledWith({ name: { $regex: '\\.\\*\\(', $options: 'i' } });
+    mockList([], 0);
+    await service.findAll({ page: 1, limit: 10, search: '.*(', status: 'active' });
+    expect(model.find).toHaveBeenCalledWith({ active: { $ne: false }, name: { $regex: '\\.\\*\\(', $options: 'i' } });
   });
 
   it('findOne lanza 404 si no existe', async () => {
@@ -40,13 +55,27 @@ describe('ProductsService', () => {
     await expect(service.findOne('x')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('update lanza 404 si no existe', async () => {
-    model.findByIdAndUpdate = jest.fn(() => chain(null));
+  it('update solo modifica productos habilitados y lanza 404 si no hay', async () => {
+    model.findOneAndUpdate = jest.fn(() => chain(null));
     await expect(service.update('x', { stock: 1 })).rejects.toBeInstanceOf(NotFoundException);
+    expect(model.findOneAndUpdate.mock.calls[0][0]).toEqual({ _id: 'x', active: { $ne: false } });
+  });
+
+  it('remove NO borra: marca active=false (eliminación lógica)', async () => {
+    model.findByIdAndUpdate = jest.fn(() => chain({ _id: 'x', active: false }));
+    model.findByIdAndDelete = jest.fn();
+    await service.remove('x');
+    expect(model.findByIdAndUpdate).toHaveBeenCalledWith('x', { $set: { active: false } }, { new: true });
+    expect(model.findByIdAndDelete).not.toHaveBeenCalled();
+  });
+
+  it('reactivate marca active=true', async () => {
+    model.findByIdAndUpdate = jest.fn(() => chain({ _id: 'x', active: true }));
+    await expect(service.reactivate('x')).resolves.toMatchObject({ active: true });
   });
 
   it('remove lanza 404 si no existe', async () => {
-    model.findByIdAndDelete = jest.fn(() => chain(null));
+    model.findByIdAndUpdate = jest.fn(() => chain(null));
     await expect(service.remove('x')).rejects.toBeInstanceOf(NotFoundException);
   });
 });
