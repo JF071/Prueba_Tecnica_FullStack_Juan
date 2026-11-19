@@ -8,4 +8,6 @@ describe('friendlyMessage', () => {
   it('400 une los mensajes de validación', () =>
     expect(friendlyMessage(400, { message: ['price must not be less than 0', 'stock must be an integer'] })).toContain('. '));
   it('500', () => expect(friendlyMessage(500, null)).toMatch(/servidor/));
+  it('409 usa la explicación del backend (p. ej. stock insuficiente)', () =>
+    expect(friendlyMessage(409, { message: 'Stock insuficiente: se requieren 150 kg y hay 120 kg' })).toMatch(/Stock insuficiente/));
 });

@@ -15,6 +15,7 @@ vi.mock('../api', async (importOriginal) => {
       update: vi.fn(),
       remove: vi.fn(),
       reactivate: vi.fn(),
+      registerExit: vi.fn(),
     },
   };
 });
@@ -81,6 +82,19 @@ describe('inhabilitar / ver inactivos', () => {
     await useProducts.getState().reactivate('p1');
     expect(api.reactivate).toHaveBeenCalledWith('p1');
     expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto reactivado' });
+  });
+});
+
+describe('registerExit', () => {
+  it('muestra cuánto se descontó en la unidad base', async () => {
+    vi.mocked(api.registerExit).mockResolvedValue({ product: product('urea'), deducted: 100 });
+    await expect(useProducts.getState().registerExit('urea', 'pres1', 2)).resolves.toBeNull();
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Salida registrada: −100 kg' });
+  });
+
+  it('devuelve el error del backend (stock insuficiente) para mostrarlo en el modal', async () => {
+    vi.mocked(api.registerExit).mockRejectedValue(new ApiError(409, 'Stock insuficiente'));
+    await expect(useProducts.getState().registerExit('urea', 'pres1', 99)).resolves.toBe('Stock insuficiente');
   });
 });
 

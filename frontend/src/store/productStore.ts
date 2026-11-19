@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api, ApiError } from '../api';
 import { useAuth } from './authStore';
 import type { Product, ProductInput, ProductStatus } from '../types';
+import { formatQty } from '../units';
 
 interface ProductState {
   items: Product[];
@@ -24,6 +25,8 @@ interface ProductState {
   /** Inhabilita el producto (eliminación lógica) */
   remove: (id: string) => Promise<void>;
   reactivate: (id: string) => Promise<void>;
+  /** Igual que save: null si salió bien, o el mensaje de error para el modal. */
+  registerExit: (id: string, presentationId: string, quantity: number) => Promise<string | null>;
   dismiss: () => void;
 }
 
@@ -95,6 +98,18 @@ export const useProducts = create<ProductState>((set, get) => {
     },
     remove: (id) => runAction(() => api.remove(id), 'Producto inhabilitado'),
     reactivate: (id) => runAction(() => api.reactivate(id), 'Producto reactivado'),
+
+    async registerExit(id, presentationId, quantity) {
+      try {
+        const { product, deducted } = await api.registerExit(id, presentationId, quantity);
+        set({ notice: { type: 'ok', text: `Salida registrada: −${formatQty(deducted, product.baseUnit)}` } });
+        await get().load();
+        return null;
+      } catch (e) {
+        logoutIfExpired(e);
+        return errorText(e);
+      }
+    },
     dismiss: () => set({ notice: null }),
   };
 });

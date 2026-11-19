@@ -18,7 +18,8 @@ export function friendlyMessage(status: number, body: any): string {
   if (status === 0) return 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.';
   if (status === 401) return 'Tu sesión expiró o las credenciales no son válidas.';
   if (status === 404) return body?.message ? String(body.message) : 'El producto ya no existe.';
-  if (status === 409) return 'Ya existe un registro con esos datos.';
+  // 409 = conflicto: correo repetido, stock insuficiente... el backend explica cuál
+  if (status === 409) return body?.message ? String(body.message) : 'Ya existe un registro con esos datos.';
   if (status === 429) return 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.';
   if (status === 400 && body?.message) {
     return Array.isArray(body.message) ? body.message.join('. ') : String(body.message);
@@ -61,4 +62,9 @@ export const api = {
   /** Inhabilita (el backend no borra el registro) */
   remove: (id: string) => request<void>(`/products/${id}`, { method: 'DELETE' }),
   reactivate: (id: string) => request<Product>(`/products/${id}/reactivar`, { method: 'PATCH' }),
+  /** Salida de inventario: descuenta quantity × factor de la presentación */
+  registerExit: (id: string, presentationId: string, quantity: number) =>
+    request<{ product: Product; deducted: number }>(`/products/${id}/salidas`, {
+      method: 'POST', body: JSON.stringify({ presentationId, quantity }),
+    }),
 };

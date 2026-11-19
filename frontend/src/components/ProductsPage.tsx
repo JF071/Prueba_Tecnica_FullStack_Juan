@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Edit2, EyeOff, Loader2, Package, Plus, RotateCcw, Search, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Edit2, EyeOff, Loader2, Package, PackageMinus, Plus, RotateCcw, Search, Trash2, X, XCircle } from 'lucide-react';
 import { useProducts } from '../store/productStore';
 import type { Product } from '../types';
 import { formatQty, money, stockEquivalence } from '../units';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Pagination } from './Pagination';
 import { ProductForm } from './ProductForm';
+import { StockExitForm } from './StockExitForm';
 import { IconButton } from './ui/IconButton';
 
 /** Chips con cada presentación y su precio: "Bulto 50 kg · $145.000" */
@@ -37,6 +38,7 @@ export function ProductsPage() {
   const s = useProducts();
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
+  const [exiting, setExiting] = useState<Product | null>(null);
   const [q, setQ] = useState('');
 
   useEffect(() => { s.load(); /* carga inicial */ }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -67,6 +69,9 @@ export function ProductsPage() {
       <IconButton label="Reactivar" tone="green" onClick={() => s.reactivate(p._id)}><RotateCcw size={14} /></IconButton>
     ) : (
       <>
+        {p.presentations?.length > 0 && p.stock > 0 && (
+          <IconButton label="Registrar salida" tone="blue" onClick={() => setExiting(p)}><PackageMinus size={14} /></IconButton>
+        )}
         <IconButton label="Editar" tone="amber" onClick={() => setEditing(p)}><Edit2 size={14} /></IconButton>
         <IconButton label="Inhabilitar" tone="red" onClick={() => setDeleting(p)}><Trash2 size={14} /></IconButton>
       </>
@@ -204,6 +209,14 @@ export function ProductsPage() {
           product={editing === 'new' ? undefined : editing}
           onSubmit={(d) => s.save(d, editing === 'new' ? undefined : editing._id)}
           onClose={() => setEditing(null)}
+        />
+      )}
+
+      {exiting && (
+        <StockExitForm
+          product={exiting}
+          onSubmit={(presentationId, quantity) => s.registerExit(exiting._id, presentationId, quantity)}
+          onClose={() => setExiting(null)}
         />
       )}
 

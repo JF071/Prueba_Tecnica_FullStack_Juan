@@ -5,6 +5,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe';
 import { CreateProductDto, ListProductsQueryDto, UpdateProductDto } from './dto/product.dto';
+import { StockExitDto } from './dto/stock-exit.dto';
 import { ProductsService } from './products.service';
 
 @ApiTags('products')
@@ -39,6 +40,13 @@ export class ProductsController {
   @ApiOperation({ summary: 'Inhabilita el producto (eliminación lógica: no se borra de la base)' })
   remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.products.remove(id);
+  }
+
+  @Post(':id/salidas')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Registra una salida: descuenta cantidad × factor de la presentación del stock' })
+  registerExit(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: StockExitDto) {
+    return this.products.registerExit(id, dto);
   }
 
   @Patch(':id/reactivar')
