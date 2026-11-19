@@ -48,11 +48,11 @@ export class ProductsService {
       .findOneAndUpdate({ _id: id, ...ACTIVE }, { $set: dto }, { new: true, runValidators: true })
       .lean()
       .exec();
-    if (!product) throw new NotFoundException('Producto no encontrado o inhabilitado');
+    if (!product) throw new NotFoundException('Producto no encontrado o despublicado');
     return product;
   }
 
-  /** Eliminación lógica: marca el producto como inhabilitado, no lo borra de la base. */
+  /** Eliminación lógica: marca el producto como despublicado, no lo borra de la base. */
   async remove(id: string) {
     await this.setActive(id, false);
   }
@@ -68,7 +68,7 @@ export class ProductsService {
    */
   async registerExit(id: string, { presentationId, quantity }: StockExitDto) {
     const product = await this.model.findOne({ _id: id, ...ACTIVE }).lean().exec();
-    if (!product) throw new NotFoundException('Producto no encontrado o inhabilitado');
+    if (!product) throw new NotFoundException('Producto no encontrado o despublicado');
 
     // Mongo asigna un _id a cada subdocumento embebido; con él se identifica la presentación
     const presentations = product.presentations as (Presentation & { _id: unknown })[];

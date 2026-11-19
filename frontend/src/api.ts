@@ -59,10 +59,10 @@ export const api = {
   create: (p: ProductInput) => request<Product>('/products', { method: 'POST', body: JSON.stringify(p) }),
   update: (id: string, p: Partial<ProductInput>) =>
     request<Product>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(p) }),
-  /** Inhabilita (el backend no borra el registro) */
+  /** Despublica (el backend no borra el registro) */
   remove: (id: string) => request<void>(`/products/${id}`, { method: 'DELETE' }),
   reactivate: (id: string) => request<Product>(`/products/${id}/reactivar`, { method: 'PATCH' }),
-  /** Salida de inventario: descuenta quantity × factor de la presentación */
+  /** Venta: descuenta quantity × factor de la presentación del inventario */
   registerExit: (id: string, presentationId: string, quantity: number) =>
     request<{ product: Product; deducted: number }>(`/products/${id}/salidas`, {
       method: 'POST', body: JSON.stringify({ presentationId, quantity }),

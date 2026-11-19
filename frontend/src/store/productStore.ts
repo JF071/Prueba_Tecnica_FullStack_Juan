@@ -11,7 +11,7 @@ interface ProductState {
   limit: number;
   totalPages: number;
   search: string;
-  /** 'active' = habilitados, 'inactive' = vista "Ver inactivos" */
+  /** 'active' = publicados, 'inactive' = vista "Ver despublicados" */
   status: ProductStatus;
   loading: boolean;
   notice: { type: 'ok' | 'error'; text: string } | null;
@@ -22,7 +22,7 @@ interface ProductState {
   setStatus: (s: ProductStatus) => Promise<void>;
   /** Devuelve null si guardó bien, o el mensaje de error para mostrarlo en el formulario. */
   save: (data: ProductInput, id?: string) => Promise<string | null>;
-  /** Inhabilita el producto (eliminación lógica) */
+  /** Despublica el producto (eliminación lógica) */
   remove: (id: string) => Promise<void>;
   reactivate: (id: string) => Promise<void>;
   /** Igual que save: null si salió bien, o el mensaje de error para el modal. */
@@ -96,13 +96,13 @@ export const useProducts = create<ProductState>((set, get) => {
         return errorText(e);
       }
     },
-    remove: (id) => runAction(() => api.remove(id), 'Producto inhabilitado'),
-    reactivate: (id) => runAction(() => api.reactivate(id), 'Producto reactivado'),
+    remove: (id) => runAction(() => api.remove(id), 'Producto despublicado'),
+    reactivate: (id) => runAction(() => api.reactivate(id), 'Producto publicado de nuevo'),
 
     async registerExit(id, presentationId, quantity) {
       try {
         const { product, deducted } = await api.registerExit(id, presentationId, quantity);
-        set({ notice: { type: 'ok', text: `Salida registrada: −${formatQty(deducted, product.baseUnit)}` } });
+        set({ notice: { type: 'ok', text: `Venta registrada: −${formatQty(deducted, product.baseUnit)} del inventario` } });
         await get().load();
         return null;
       } catch (e) {

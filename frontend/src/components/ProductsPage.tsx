@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Edit2, EyeOff, Loader2, Package, PackageMinus, Plus, RotateCcw, Search, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Edit2, EyeOff, Loader2, Package, Plus, RotateCcw, Search, ShoppingCart, X, XCircle } from 'lucide-react';
 import { useProducts } from '../store/productStore';
 import type { Product } from '../types';
 import { formatQty, money, stockEquivalence } from '../units';
@@ -63,26 +63,26 @@ export function ProductsPage() {
 
   const inactiveView = s.status === 'inactive';
 
-  // En la vista de inactivos solo se puede reactivar (igual que en el CRM)
+  // En la vista de despublicados solo se puede volver a publicar (igual que "Reactivar" en el CRM)
   const actions = (p: Product) =>
     inactiveView ? (
-      <IconButton label="Reactivar" tone="green" onClick={() => s.reactivate(p._id)}><RotateCcw size={14} /></IconButton>
+      <IconButton label="Volver a publicar" tone="green" onClick={() => s.reactivate(p._id)}><RotateCcw size={14} /></IconButton>
     ) : (
       <>
         {p.presentations?.length > 0 && p.stock > 0 && (
-          <IconButton label="Registrar salida" tone="blue" onClick={() => setExiting(p)}><PackageMinus size={14} /></IconButton>
+          <IconButton label="Registrar venta" tone="blue" onClick={() => setExiting(p)}><ShoppingCart size={14} /></IconButton>
         )}
         <IconButton label="Editar" tone="amber" onClick={() => setEditing(p)}><Edit2 size={14} /></IconButton>
-        <IconButton label="Inhabilitar" tone="red" onClick={() => setDeleting(p)}><Trash2 size={14} /></IconButton>
+        <IconButton label="Despublicar" tone="red" onClick={() => setDeleting(p)}><EyeOff size={14} /></IconButton>
       </>
     );
 
   const empty = !s.loading && s.items.length === 0;
   const plural = s.total !== 1 ? 's' : '';
-  const emptyTitle = s.search ? 'Sin resultados' : inactiveView ? 'No hay productos inhabilitados' : 'Aún no hay productos';
+  const emptyTitle = s.search ? 'Sin resultados' : inactiveView ? 'No hay productos despublicados' : 'Aún no hay productos en el catálogo';
   const emptyHint = s.search
     ? 'Intenta con otro término de búsqueda'
-    : inactiveView ? 'Los productos que inhabilites aparecerán aquí' : 'Crea el primero con el botón "Nuevo producto"';
+    : inactiveView ? 'Los productos que despubliques aparecerán aquí' : 'Publica el primero con el botón "Nuevo producto"';
 
   return (
     <div className="space-y-4">
@@ -91,7 +91,7 @@ export function ProductsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Productos</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {s.total} producto{plural} {inactiveView ? `inhabilitado${plural}` : s.search ? `encontrado${plural}` : `activo${plural}`}
+            {s.total} producto{plural} {inactiveView ? `despublicado${plural}` : s.search ? `encontrado${plural}` : `publicado${plural} en la tienda`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export function ProductsPage() {
             className={`btn border ${inactiveView
               ? 'border-foreground bg-foreground text-background'
               : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-            <EyeOff size={14} /> {inactiveView ? 'Viendo inactivos' : 'Ver inactivos'}
+            <EyeOff size={14} /> {inactiveView ? 'Viendo despublicados' : 'Ver despublicados'}
           </button>
           {!inactiveView && (
             <button className="btn-primary" onClick={() => setEditing('new')}>
@@ -146,7 +146,7 @@ export function ProductsPage() {
                     <th className="th rounded-tl-xl">Producto</th>
                     <th className="th">Categoría</th>
                     <th className="th">Presentaciones</th>
-                    <th className="th text-right">Stock</th>
+                    <th className="th text-right">Disponible</th>
                     <th className="th rounded-tr-xl text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -222,10 +222,10 @@ export function ProductsPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Inhabilitar producto"
-          message={<>¿Seguro que quieres inhabilitar <span className="font-bold">{deleting.name}</span>?</>}
-          detail='Dejará de aparecer en el inventario, pero no se borra: puedes reactivarlo después desde "Ver inactivos".'
-          confirmLabel="Inhabilitar"
+          title="Despublicar producto"
+          message={<>¿Seguro que quieres despublicar <span className="font-bold">{deleting.name}</span>?</>}
+          detail='Dejará de mostrarse en la tienda, pero no se borra (los pedidos que lo incluyen conservan su historial). Puedes volver a publicarlo desde "Ver despublicados".'
+          confirmLabel="Despublicar"
           onConfirm={confirmDelete}
           onCancel={() => setDeleting(null)}
         />

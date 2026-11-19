@@ -26,7 +26,7 @@ export function Sidebar({ mobileOpen, onClose }: Props) {
         </div>
 
         <nav className="flex-1 px-3 py-4" aria-label="Menú principal">
-          <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Inventario</p>
+          <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Marketplace</p>
           <span aria-current="page" className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
             <Package size={18} />
             Productos

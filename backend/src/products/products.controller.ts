@@ -37,20 +37,20 @@ export class ProductsController {
 
   @Delete(':id')
   @HttpCode(204)
-  @ApiOperation({ summary: 'Inhabilita el producto (eliminación lógica: no se borra de la base)' })
+  @ApiOperation({ summary: 'Despublica el producto de la tienda (eliminación lógica: no se borra de la base)' })
   remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.products.remove(id);
   }
 
   @Post(':id/salidas')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Registra una salida: descuenta cantidad × factor de la presentación del stock' })
+  @ApiOperation({ summary: 'Registra una venta (salida de inventario): descuenta cantidad × factor de la presentación' })
   registerExit(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: StockExitDto) {
     return this.products.registerExit(id, dto);
   }
 
   @Patch(':id/reactivar')
-  @ApiOperation({ summary: 'Vuelve a habilitar un producto inhabilitado' })
+  @ApiOperation({ summary: 'Vuelve a publicar un producto despublicado' })
   reactivate(@Param('id', ParseObjectIdPipe) id: string) {
     return this.products.reactivate(id);
   }

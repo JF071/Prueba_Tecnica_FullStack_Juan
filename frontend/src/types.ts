@@ -17,7 +17,7 @@ export interface Product {
   /** Existencias en la unidad base */
   stock: number;
   presentations: Presentation[];
-  /** false = inhabilitado (eliminación lógica) */
+  /** false = despublicado de la tienda (eliminación lógica) */
   active?: boolean;
 }
 

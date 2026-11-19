@@ -63,7 +63,7 @@ describe('productStore.load', () => {
   });
 });
 
-describe('inhabilitar / ver inactivos', () => {
+describe('despublicar / ver despublicados', () => {
   beforeEach(() => vi.mocked(api.list).mockResolvedValue(pageOf('x', 1)));
 
   it('setStatus pide al backend los inactivos desde la página 1', async () => {
@@ -73,15 +73,15 @@ describe('inhabilitar / ver inactivos', () => {
     await useProducts.getState().setStatus('active');
   });
 
-  it('remove inhabilita y reactivate reactiva, mostrando el aviso correspondiente', async () => {
+  it('remove despublica y reactivate vuelve a publicar, mostrando el aviso correspondiente', async () => {
     vi.mocked(api.remove).mockResolvedValue(undefined);
     await useProducts.getState().remove('p1');
-    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto inhabilitado' });
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto despublicado' });
 
     vi.mocked(api.reactivate).mockResolvedValue(product('p1'));
     await useProducts.getState().reactivate('p1');
     expect(api.reactivate).toHaveBeenCalledWith('p1');
-    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto reactivado' });
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Producto publicado de nuevo' });
   });
 });
 
@@ -89,7 +89,7 @@ describe('registerExit', () => {
   it('muestra cuánto se descontó en la unidad base', async () => {
     vi.mocked(api.registerExit).mockResolvedValue({ product: product('urea'), deducted: 100 });
     await expect(useProducts.getState().registerExit('urea', 'pres1', 2)).resolves.toBeNull();
-    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Salida registrada: −100 kg' });
+    expect(useProducts.getState().notice).toEqual({ type: 'ok', text: 'Venta registrada: −100 kg del inventario' });
   });
 
   it('devuelve el error del backend (stock insuficiente) para mostrarlo en el modal', async () => {

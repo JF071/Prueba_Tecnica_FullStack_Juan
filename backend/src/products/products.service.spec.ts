@@ -32,13 +32,13 @@ describe('ProductsService', () => {
     expect(res).toMatchObject({ total: 25, page: 2, limit: 10, totalPages: 3 });
   });
 
-  it('por defecto lista solo habilitados (incluye documentos sin el campo active)', async () => {
+  it('por defecto lista solo publicados (incluye documentos sin el campo active)', async () => {
     mockList([], 0);
     await service.findAll({ page: 1, limit: 10, status: 'active' });
     expect(model.find).toHaveBeenCalledWith({ active: { $ne: false } });
   });
 
-  it('con status=inactive lista solo los inhabilitados', async () => {
+  it('con status=inactive lista solo los despublicados', async () => {
     mockList([], 0);
     await service.findAll({ page: 1, limit: 10, status: 'inactive' });
     expect(model.find).toHaveBeenCalledWith({ active: false });
@@ -106,7 +106,7 @@ describe('ProductsService', () => {
         .rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('responde 404 si el producto no existe o está inhabilitado', async () => {
+    it('responde 404 si el producto no existe o está despublicado', async () => {
       model.findOne = jest.fn(() => chain(null));
       await expect(service.registerExit('p1', { presentationId: PRES_ID, quantity: 1 }))
         .rejects.toBeInstanceOf(NotFoundException);

@@ -95,7 +95,7 @@ export class ListProductsQueryDto {
   @MaxLength(60)
   search?: string;
 
-  @ApiPropertyOptional({ enum: PRODUCT_STATUS, default: 'active', description: 'active = habilitados, inactive = inhabilitados' })
+  @ApiPropertyOptional({ enum: PRODUCT_STATUS, default: 'active', description: 'active = publicados en la tienda, inactive = despublicados' })
   @IsOptional()
   @IsIn(PRODUCT_STATUS)
   status: ProductStatus = 'active';

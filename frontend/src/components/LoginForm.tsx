@@ -19,7 +19,7 @@ export function LoginForm() {
           {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {mode === 'login' ? 'Ingresa para gestionar tus productos' : 'Regístrate para empezar'}
+          {mode === 'login' ? 'Ingresa para administrar el catálogo del marketplace' : 'Regístrate para empezar'}
         </p>
 
         <div className="mt-5 space-y-4">

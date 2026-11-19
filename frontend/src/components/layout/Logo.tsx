@@ -7,8 +7,8 @@ export function Logo() {
         <Sprout size={18} />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-bold tracking-tight text-foreground">AgroStock</p>
-        <p className="text-[11px] text-muted-foreground">Gestión de inventario</p>
+        <p className="text-sm font-bold tracking-tight text-foreground">AgroMarket Admin</p>
+        <p className="text-[11px] text-muted-foreground">Catálogo de productos</p>
       </div>
     </div>
   );

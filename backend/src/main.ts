@@ -23,8 +23,8 @@ async function bootstrap() {
   app.useGlobalFilters(new MongoExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('API de Productos')
-    .setDescription('CRUD de productos protegido con JWT')
+    .setTitle('AgroMarket API · Catálogo')
+    .setDescription('Catálogo de productos de un marketplace de agroinsumos: CRUD con presentaciones de venta, publicación/despublicación y registro de ventas. Protegido con JWT.')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

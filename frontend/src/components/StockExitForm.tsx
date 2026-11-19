@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { AlertCircle, PackageMinus } from 'lucide-react';
+import { AlertCircle, ShoppingCart } from 'lucide-react';
 import type { Product } from '../types';
 import { formatQty, money } from '../units';
 import { Modal } from './ui/Modal';
@@ -10,7 +10,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** Registra una salida de inventario eligiendo presentación y cantidad. */
+/** Registra una venta: descuenta del inventario según la presentación y la cantidad vendidas. */
 export function StockExitForm({ product, onSubmit, onClose }: Props) {
   const [presentationId, setPresentationId] = useState(product.presentations[0]?._id ?? '');
   const [quantity, setQuantity] = useState('1');
@@ -36,7 +36,7 @@ export function StockExitForm({ product, onSubmit, onClose }: Props) {
   };
 
   return (
-    <Modal title="Registrar salida" icon={<PackageMinus size={14} />} iconClassName="bg-blue-100 text-blue-600" onClose={onClose}>
+    <Modal title="Registrar venta" icon={<ShoppingCart size={14} />} iconClassName="bg-blue-100 text-blue-600" onClose={onClose}>
       <form onSubmit={submit} noValidate className="space-y-4 px-5 py-5">
         <div className="rounded-lg bg-muted px-3 py-2">
           <p className="text-sm font-semibold text-foreground">{product.name}</p>
@@ -86,7 +86,7 @@ export function StockExitForm({ product, onSubmit, onClose }: Props) {
 
         <div className="flex justify-end gap-2 border-t border-border pt-4">
           <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-          <button className="btn-primary" disabled={saving || !validQty || !enough}>{saving ? 'Registrando…' : 'Registrar salida'}</button>
+          <button className="btn-primary" disabled={saving || !validQty || !enough}>{saving ? 'Registrando…' : 'Registrar venta'}</button>
         </div>
       </form>
     </Modal>
