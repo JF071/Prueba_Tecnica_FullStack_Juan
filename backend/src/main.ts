@@ -3,13 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { parseCorsOrigins } from './common/cors';
 import { MongoExceptionFilter } from './common/mongo-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
-  app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true });
+  // Solo los orígenes de la lista pueden llamar a la API desde el navegador
+  app.enableCors({ origin: parseCorsOrigins(process.env.CORS_ORIGIN) });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
