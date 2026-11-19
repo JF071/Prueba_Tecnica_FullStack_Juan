@@ -15,16 +15,21 @@ interface ProductState {
   load: () => Promise<void>;
   setPage: (p: number) => Promise<void>;
   setSearch: (s: string) => Promise<void>;
-  save: (data: ProductInput, id?: string) => Promise<boolean>;
+  /** Devuelve null si guardó bien, o el mensaje de error para mostrarlo en el formulario. */
+  save: (data: ProductInput, id?: string) => Promise<string | null>;
   remove: (id: string) => Promise<void>;
   dismiss: () => void;
 }
 
 export const useProducts = create<ProductState>((set, get) => {
   /** Centraliza el manejo de errores: si la sesión caduca, cierra sesión. */
-  const fail = (e: unknown) => {
+  const errorText = (e: unknown) => (e instanceof ApiError ? e.message : 'Error inesperado');
+  const logoutIfExpired = (e: unknown) => {
     if (e instanceof ApiError && e.status === 401) useAuth.getState().logout();
-    set({ loading: false, notice: { type: 'error', text: e instanceof ApiError ? e.message : 'Error inesperado' } });
+  };
+  const fail = (e: unknown) => {
+    logoutIfExpired(e);
+    set({ loading: false, notice: { type: 'error', text: errorText(e) } });
   };
 
   return {
@@ -51,8 +56,12 @@ export const useProducts = create<ProductState>((set, get) => {
         if (id) await api.update(id, data); else await api.create(data);
         set({ notice: { type: 'ok', text: id ? 'Producto actualizado' : 'Producto creado' } });
         await get().load();
-        return true;
-      } catch (e) { fail(e); return false; }
+        return null;
+      } catch (e) {
+        // No se usa el aviso de la página: quedaría oculto detrás del modal
+        logoutIfExpired(e);
+        return errorText(e);
+      }
     },
     async remove(id) {
       try {

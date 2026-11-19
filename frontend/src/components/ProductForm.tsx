@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import type { Product, ProductInput } from '../types';
 
-interface Props { product?: Product; onSubmit: (d: ProductInput) => Promise<boolean>; onClose: () => void }
+interface Props { product?: Product; onSubmit: (d: ProductInput) => Promise<string | null>; onClose: () => void }
 
 export function ProductForm({ product, onSubmit, onClose }: Props) {
   const [f, setF] = useState({
@@ -10,6 +10,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -24,12 +25,13 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
     ev.preventDefault();
     if (!validate()) return;
     setSaving(true);
-    const ok = await onSubmit({
+    setServerError(null);
+    const error = await onSubmit({
       name: f.name.trim(), description: f.description.trim(), category: f.category.trim() || 'general',
       price: Number(f.price), stock: Number(f.stock),
     });
     setSaving(false);
-    if (ok) onClose();
+    if (error) setServerError(error); else onClose();
   };
 
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
@@ -45,6 +47,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
           <label>Stock<input type="number" step="1" min="0" value={f.stock} onChange={set('stock')} />{errors.stock && <span className="error">{errors.stock}</span>}</label>
         </div>
         <label>Categoría<input value={f.category} onChange={set('category')} maxLength={60} /></label>
+        {serverError && <p className="error" role="alert">{serverError}</p>}
         <div className="actions">
           <button type="button" onClick={onClose}>Cancelar</button>
           <button className="primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button>
