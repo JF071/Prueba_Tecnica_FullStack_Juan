@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../store/authStore';
 import { useProducts } from '../store/productStore';
 import type { Product } from '../types';
+import { ConfirmDialog } from './ConfirmDialog';
 import { Pagination } from './Pagination';
 import { ProductForm } from './ProductForm';
 
@@ -11,6 +12,7 @@ export function ProductsPage() {
   const s = useProducts();
   const logout = useAuth((a) => a.logout);
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<Product | null>(null);
   const [q, setQ] = useState('');
 
   useEffect(() => { s.load(); /* carga inicial */ }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -21,7 +23,17 @@ export function ProductsPage() {
     return () => clearTimeout(t);
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onDelete = (p: Product) => { if (window.confirm(`¿Eliminar "${p.name}"?`)) s.remove(p._id); };
+  // Los avisos de éxito se cierran solos; los de error se quedan hasta que el usuario los lea y cierre
+  useEffect(() => {
+    if (s.notice?.type !== 'ok') return;
+    const t = setTimeout(s.dismiss, 3000);
+    return () => clearTimeout(t);
+  }, [s.notice]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const confirmDelete = () => {
+    if (deleting) s.remove(deleting._id);
+    setDeleting(null);
+  };
 
   return (
     <main className="container">
@@ -53,7 +65,7 @@ export function ProductsPage() {
                 <td data-label="Stock" className="num">{p.stock}</td>
                 <td className="row-actions">
                   <button onClick={() => setEditing(p)}>Editar</button>
-                  <button className="danger" onClick={() => onDelete(p)}>Eliminar</button>
+                  <button className="danger" onClick={() => setDeleting(p)}>Eliminar</button>
                 </td>
               </tr>
             ))}
@@ -72,6 +84,16 @@ export function ProductsPage() {
           product={editing === 'new' ? undefined : editing}
           onSubmit={(d) => s.save(d, editing === 'new' ? undefined : editing._id)}
           onClose={() => setEditing(null)}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title="Eliminar producto"
+          message={`¿Seguro que quieres eliminar "${deleting.name}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </main>

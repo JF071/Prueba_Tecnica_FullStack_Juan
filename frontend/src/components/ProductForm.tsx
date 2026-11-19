@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { useEscape } from '../hooks/useEscape';
 import type { Product, ProductInput } from '../types';
 
 interface Props { product?: Product; onSubmit: (d: ProductInput) => Promise<string | null>; onClose: () => void }
@@ -11,6 +12,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+  useEscape(onClose);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -40,7 +42,7 @@ export function ProductForm({ product, onSubmit, onClose }: Props) {
     <div className="overlay" role="dialog" aria-modal="true" aria-label={product ? 'Editar producto' : 'Nuevo producto'}>
       <form className="card modal" onSubmit={submit} noValidate>
         <h2>{product ? 'Editar producto' : 'Nuevo producto'}</h2>
-        <label>Nombre<input value={f.name} onChange={set('name')} maxLength={120} />{errors.name && <span className="error">{errors.name}</span>}</label>
+        <label>Nombre<input autoFocus value={f.name} onChange={set('name')} maxLength={120} />{errors.name && <span className="error">{errors.name}</span>}</label>
         <label>Descripción<textarea value={f.description} onChange={set('description')} maxLength={500} rows={3} /></label>
         <div className="row">
           <label>Precio<input type="number" step="0.01" min="0" value={f.price} onChange={set('price')} />{errors.price && <span className="error">{errors.price}</span>}</label>
