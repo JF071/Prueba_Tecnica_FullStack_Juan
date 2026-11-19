@@ -1,15 +1,21 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+
+/** Quita espacios al inicio y al final antes de validar ("   " pasa a ""). */
+const Trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Fertilizante orgánico 25kg' })
+  @Trim()
   @IsString()
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @MaxLength(120)
   name: string;
 
   @ApiPropertyOptional({ example: 'Bulto de 25 kg' })
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(500)
   description?: string;
@@ -26,6 +32,7 @@ export class CreateProductDto {
 
   @ApiPropertyOptional({ example: 'insumos' })
   @IsOptional()
+  @Trim()
   @IsString()
   @MaxLength(60)
   category?: string;
