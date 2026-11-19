@@ -21,6 +21,15 @@ interface ProductState {
   dismiss: () => void;
 }
 
+type ProductData = Pick<ProductState, 'items' | 'total' | 'page' | 'limit' | 'totalPages' | 'search' | 'loading' | 'notice'>;
+
+const initialData: ProductData = {
+  items: [], total: 0, page: 1, limit: 10, totalPages: 1, search: '', loading: false, notice: null,
+};
+
+/** Número de la última carga pedida: sirve para descartar respuestas viejas. */
+let lastRequest = 0;
+
 export const useProducts = create<ProductState>((set, get) => {
   /** Centraliza el manejo de errores: si la sesión caduca, cierra sesión. */
   const errorText = (e: unknown) => (e instanceof ApiError ? e.message : 'Error inesperado');
@@ -33,20 +42,25 @@ export const useProducts = create<ProductState>((set, get) => {
   };
 
   return {
-    items: [], total: 0, page: 1, limit: 10, totalPages: 1, search: '', loading: false, notice: null,
+    ...initialData,
 
     async load() {
       const { page, limit, search } = get();
+      const requestId = ++lastRequest;
       set({ loading: true });
       try {
         const res = await api.list(page, limit, search);
+        // Si mientras esperábamos se pidió otra página o búsqueda, esta respuesta ya no sirve
+        if (requestId !== lastRequest) return;
         // Si borraste el último elemento de la última página, retrocede
         if (res.items.length === 0 && page > 1) {
           set({ page: page - 1 });
           return get().load();
         }
         set({ items: res.items, total: res.total, totalPages: res.totalPages, loading: false });
-      } catch (e) { fail(e); }
+      } catch (e) {
+        if (requestId === lastRequest) fail(e);
+      }
     },
     async setPage(page) { set({ page }); await get().load(); },
     async setSearch(search) { set({ search, page: 1 }); await get().load(); },
@@ -72,4 +86,13 @@ export const useProducts = create<ProductState>((set, get) => {
     },
     dismiss: () => set({ notice: null }),
   };
+});
+
+// Al cerrar sesión se borran los productos, para que el siguiente usuario no vea datos del anterior.
+// Se invalida también cualquier carga en curso.
+useAuth.subscribe((auth, prev) => {
+  if (prev.token && !auth.token) {
+    lastRequest++;
+    useProducts.setState(initialData);
+  }
 });

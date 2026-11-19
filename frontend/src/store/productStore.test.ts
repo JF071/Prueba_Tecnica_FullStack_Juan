@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api';
+import { useAuth } from './authStore';
 import { useProducts } from './productStore';
+import type { Page, Product } from '../types';
 
 // Se simula la API para probar solo la lógica del store
 vi.mock('../api', async (importOriginal) => {
@@ -33,5 +35,36 @@ describe('productStore.save', () => {
     await expect(useProducts.getState().save(input)).resolves.toBe('price must not be less than 0');
     // El aviso de la página no se usa: quedaría oculto detrás del modal
     expect(useProducts.getState().notice).toBeNull();
+  });
+});
+
+const product = (name: string): Product => ({ _id: name, name, description: '', price: 1, stock: 1, category: 'x' });
+const pageOf = (name: string, page: number): Page<Product> => ({ items: [product(name)], total: 30, page, limit: 10, totalPages: 3 });
+
+describe('productStore.load', () => {
+  it('ignora una respuesta vieja que llega después de una más nueva', async () => {
+    let resolvePage2!: (p: Page<Product>) => void;
+    vi.mocked(api.list)
+      .mockImplementationOnce(() => new Promise((r) => { resolvePage2 = r; })) // página 2: lenta
+      .mockResolvedValueOnce(pageOf('de-pagina-3', 3)); // página 3: rápida
+
+    const slow = useProducts.getState().setPage(2);
+    await useProducts.getState().setPage(3);
+    resolvePage2(pageOf('de-pagina-2', 2)); // la respuesta vieja llega al final
+    await slow;
+
+    expect(useProducts.getState().page).toBe(3);
+    expect(useProducts.getState().items[0].name).toBe('de-pagina-3');
+  });
+});
+
+describe('cerrar sesión', () => {
+  it('borra los productos del usuario anterior', () => {
+    useAuth.setState({ token: 'token-de-prueba' });
+    useProducts.setState({ items: [product('privado')], total: 1, page: 2, search: 'algo' });
+
+    useAuth.getState().logout();
+
+    expect(useProducts.getState()).toMatchObject({ items: [], total: 0, page: 1, search: '' });
   });
 });
