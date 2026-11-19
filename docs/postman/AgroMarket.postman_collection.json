@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "AgroMarket API · Catálogo",
+    "description": "Colección para probar la API del catálogo de un marketplace de agroinsumos.\n\nOrden sugerido: 1) Autenticación → Login (guarda el token solo), 2) Productos en orden, 3) Casos de error.\n\nVariables: baseUrl (por defecto http://localhost:3000/api), email y password de la cuenta de prueba. token, productId y presentationId se llenan automáticamente con los scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "email", "value": "demo@agro.com" },
+    { "key": "password", "value": "Clave12345" },
+    { "key": "token", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "presentationId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Registro (usuario nuevo aleatorio)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Creado', () => pm.response.to.have.status(201));",
+            "pm.test('No devuelve la contraseña', () => pm.expect(pm.response.json()).to.not.have.property('passwordHash'));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"ClaveSegura123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (guarda el token)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const { accessToken } = pm.response.json();",
+            "pm.test('Devuelve un JWT', () => pm.expect(accessToken.split('.')).to.have.length(3));",
+            "pm.collectionVariables.set('token', accessToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Productos",
+      "item": [
+        {
+          "name": "Crear producto con presentaciones",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Creado', () => pm.response.to.have.status(201));",
+            "const p = pm.response.json();",
+            "pm.test('Recorta espacios del nombre', () => pm.expect(p.name).to.eql('Fertilizante Triple 15'));",
+            "pm.test('Nace publicado', () => pm.expect(p.active).to.eql(true));",
+            "pm.collectionVariables.set('productId', p._id);",
+            "pm.collectionVariables.set('presentationId', p.presentations[0]._id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"  Fertilizante Triple 15  \",\n  \"supplier\": \"Agroinsumos del Valle S.A.S.\",\n  \"category\": \"fertilizantes\",\n  \"description\": \"NPK 15-15-15 granulado\",\n  \"baseUnit\": \"kg\",\n  \"stock\": 500,\n  \"presentations\": [\n    { \"name\": \"Bulto 50 kg\", \"factor\": 50, \"price\": 165000 },\n    { \"name\": \"Bulto 25 kg\", \"factor\": 25, \"price\": 86000 }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Listar publicados (paginado)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Trae datos de paginación', () => pm.expect(r).to.include.keys('items', 'total', 'page', 'limit', 'totalPages'));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["products"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Buscar por proveedor",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Encuentra productos del proveedor', () => {",
+            "  const { items } = pm.response.json();",
+            "  pm.expect(items.length).to.be.above(0);",
+            "  items.forEach((p) => pm.expect(p.supplier.toLowerCase()).to.include('del valle'));",
+            "});"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products?search=del valle", "host": ["{{baseUrl}}"], "path": ["products"],
+              "query": [{ "key": "search", "value": "del valle" }] }
+          }
+        },
+        {
+          "name": "Ver producto por id",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Editar (solo los campos enviados)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Actualiza la descripción', () => pm.expect(pm.response.json().description).to.include('Edición'));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"NPK 15-15-15 granulado · Edición desde Postman\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Registrar venta (2 × Bulto 50 kg = −100 kg)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Descuenta cantidad × factor', () => pm.expect(r.deducted).to.eql(100));",
+            "pm.test('Stock en unidad base actualizado', () => pm.expect(r.product.stock).to.be.a('number'));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"presentationId\": \"{{presentationId}}\",\n  \"quantity\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/salidas", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "salidas"] }
+          }
+        },
+        {
+          "name": "Despublicar (DELETE = eliminación lógica)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204 Sin contenido', () => pm.response.to.have.status(204));"
+          ] } }],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Listar despublicados (el registro sigue en la base)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const id = pm.collectionVariables.get('productId');",
+            "pm.test('El producto despublicado aparece aquí', () => {",
+            "  pm.expect(pm.response.json().items.map((p) => p._id)).to.include(id);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products?status=inactive", "host": ["{{baseUrl}}"], "path": ["products"],
+              "query": [{ "key": "status", "value": "inactive" }] }
+          }
+        },
+        {
+          "name": "Volver a publicar",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Vuelve a estar publicado', () => pm.expect(pm.response.json().active).to.eql(true));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/reactivar", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "reactivar"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Casos de error",
+      "item": [
+        {
+          "name": "Sin token → 401",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('401 No autorizado', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Nombre con solo espacios → 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 con mensaje claro', () => {",
+            "  pm.response.to.have.status(400);",
+            "  pm.expect(pm.response.json().message).to.include('El nombre es obligatorio');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"   \",\n  \"supplier\": \"Proveedor\",\n  \"baseUnit\": \"kg\",\n  \"stock\": 1,\n  \"presentations\": [{ \"name\": \"Kilo\", \"factor\": 1, \"price\": 1000 }]\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Unidad inválida y sin presentaciones → 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('Explica ambos errores', () => {",
+            "  const msg = pm.response.json().message.join(' ');",
+            "  pm.expect(msg).to.include('unidad base');",
+            "  pm.expect(msg).to.include('al menos una presentación');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Producto X\",\n  \"supplier\": \"Proveedor\",\n  \"baseUnit\": \"cucharada\",\n  \"stock\": 1,\n  \"presentations\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Campo no permitido → 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400: whitelist rechaza campos que no están en el DTO', () => pm.response.to.have.status(400));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": false,\n  \"esAdmin\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Venta mayor al stock → 409",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('409 Stock insuficiente', () => {",
+            "  pm.response.to.have.status(409);",
+            "  pm.expect(pm.response.json().message).to.include('Stock insuficiente');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"presentationId\": \"{{presentationId}}\",\n  \"quantity\": 1000\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/salidas", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "salidas"] }
+          }
+        },
+        {
+          "name": "Id con formato inválido → 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Id inválido', () => pm.response.to.have.status(400));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/abc123", "host": ["{{baseUrl}}"], "path": ["products", "abc123"] }
+          }
+        },
+        {
+          "name": "Login con clave incorrecta → 401 (repetir 6 veces → 429)",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "// Anti fuerza bruta: el login acepta 5 intentos por minuto por IP; el 6.º responde 429",
+            "pm.test('401 o 429 (si se superó el límite)', () => pm.expect(pm.response.code).to.be.oneOf([401, 429]));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"ClaveIncorrecta1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    }
+  ]
+}
