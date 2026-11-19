@@ -2,12 +2,36 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Edit2, Loader2, Package, Plus, Search, Trash2, X, XCircle } from 'lucide-react';
 import { useProducts } from '../store/productStore';
 import type { Product } from '../types';
+import { formatQty, money, stockEquivalence } from '../units';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Pagination } from './Pagination';
 import { ProductForm } from './ProductForm';
 import { IconButton } from './ui/IconButton';
 
-const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+/** Chips con cada presentación y su precio: "Bulto 50 kg · $145.000" */
+function PresentationChips({ p }: { p: Product }) {
+  if (!p.presentations?.length) return <span className="text-xs text-amber-600">Sin presentaciones</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {p.presentations.map((pr) => (
+        <span key={pr._id ?? pr.name} className="whitespace-nowrap rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground">
+          {pr.name} · <span className="font-semibold tabular-nums">{money.format(pr.price)}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Stock en unidad base + equivalencia en la presentación más grande */
+function StockCell({ p, align = 'right' }: { p: Product; align?: 'left' | 'right' }) {
+  const eq = stockEquivalence(p.stock, p.presentations ?? []);
+  return (
+    <div className={align === 'right' ? 'text-right' : ''}>
+      <p className={`text-sm font-semibold tabular-nums ${p.stock === 0 ? 'text-red-600' : 'text-foreground'}`}>{formatQty(p.stock, p.baseUnit ?? 'und')}</p>
+      {eq && <p className="text-[11px] text-muted-foreground">≈ {eq}</p>}
+    </div>
+  );
+}
 
 export function ProductsPage() {
   const s = useProducts();
@@ -95,7 +119,7 @@ export function ProductsPage() {
                   <tr className="border-b border-border bg-muted">
                     <th className="th rounded-tl-xl">Producto</th>
                     <th className="th">Categoría</th>
-                    <th className="th text-right">Precio</th>
+                    <th className="th">Presentaciones</th>
                     <th className="th text-right">Stock</th>
                     <th className="th rounded-tr-xl text-right">Acciones</th>
                   </tr>
@@ -110,8 +134,8 @@ export function ProductsPage() {
                       <td className="px-4 py-3">
                         <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">{p.category}</span>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm tabular-nums">{money.format(p.price)}</td>
-                      <td className="px-4 py-3 text-right text-sm tabular-nums">{p.stock}</td>
+                      <td className="max-w-sm px-4 py-3"><PresentationChips p={p} /></td>
+                      <td className="whitespace-nowrap px-4 py-3"><StockCell p={p} /></td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">{actions(p)}</div>
                       </td>
@@ -125,10 +149,13 @@ export function ProductsPage() {
             <ul className="divide-y divide-border md:hidden">
               {s.items.map((p) => (
                 <li key={p._id} className="flex items-start justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{p.category} · Stock {p.stock}</p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums">{money.format(p.price)}</p>
+                  <div className="min-w-0 space-y-1.5">
+                    <div>
+                      <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.category}</p>
+                    </div>
+                    <StockCell p={p} align="left" />
+                    <PresentationChips p={p} />
                   </div>
                   <div className="flex flex-shrink-0 gap-1">{actions(p)}</div>
                 </li>

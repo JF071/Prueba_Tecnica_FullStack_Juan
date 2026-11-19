@@ -42,7 +42,7 @@ describe('ProductsService', () => {
 
   it('update lanza 404 si no existe', async () => {
     model.findByIdAndUpdate = jest.fn(() => chain(null));
-    await expect(service.update('x', { price: 1 })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.update('x', { stock: 1 })).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('remove lanza 404 si no existe', async () => {

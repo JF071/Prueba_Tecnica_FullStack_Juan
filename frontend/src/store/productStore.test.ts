@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api';
 import { useAuth } from './authStore';
 import { useProducts } from './productStore';
-import type { Page, Product } from '../types';
+import type { Page, Product, ProductInput } from '../types';
 
 // Se simula la API para probar solo la lógica del store
 vi.mock('../api', async (importOriginal) => {
@@ -19,7 +19,10 @@ vi.mock('../api', async (importOriginal) => {
 });
 const { api } = await import('../api');
 
-const input = { name: 'Semilla de maíz', description: '', price: 1000, stock: 5, category: 'semillas' };
+const input: ProductInput = {
+  name: 'Semilla de maíz', description: '', category: 'semillas', baseUnit: 'kg', stock: 5,
+  presentations: [{ name: 'Bolsa 1 kg', factor: 1, price: 1000 }],
+};
 
 describe('productStore.save', () => {
   beforeEach(() => useProducts.setState({ notice: null }));
@@ -38,7 +41,7 @@ describe('productStore.save', () => {
   });
 });
 
-const product = (name: string): Product => ({ _id: name, name, description: '', price: 1, stock: 1, category: 'x' });
+const product = (name: string): Product => ({ _id: name, ...input, name });
 const pageOf = (name: string, page: number): Page<Product> => ({ items: [product(name)], total: 30, page, limit: 10, totalPages: 3 });
 
 describe('productStore.load', () => {
